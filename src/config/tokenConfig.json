@@ -1,0 +1,27 @@
+{
+    "kmsId": "",
+    "useRsa": false,
+    "useKms": false,
+    "issuer": "security.mattcompany.com",
+    "audience": [
+      "restaurant.mattcompany.com",
+      "lambda-authorizer.com"
+    ],
+    "accessToken": {
+      "jwtSecret": "abc1234$$",
+      "exp": {
+        "amount": 3,
+        "unit": "hour"
+      }
+    },
+    "refreshToken": {
+      "jwtSecret": "abc1234$$",
+      "exp": {
+        "amount": 1,
+        "unit": "month"
+      }
+    },
+    "jwtSession": {
+      "session": "false"
+    }
+}

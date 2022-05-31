@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { CdkSamExampleStack } from '../lib/cdk-sam-example-stack';
+import { CdkSecurityApiStack } from '../lib/cdk-security-api-stack';
 
 const app = new cdk.App();
-new CdkSamExampleStack(app, 'CdkSamExampleStack', {
+new CdkSecurityApiStack(app, 'CdkSecurityApiStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
