@@ -51,6 +51,7 @@ async function signWithKms(userName: string, type: TokenType, authConfig: Auth) 
   };
 
   const message = Buffer.from(`${tokenComponents.header}.${tokenComponents.payload}`);
+  console.info(`calling kms...`);
   const command = getKmsSignCommand(message, authConfig);
   const data = await client.send(command);
   const encodedSignature = base64url.encode(Buffer.from(data.Signature as Uint8Array), 'base64');
@@ -58,15 +59,16 @@ async function signWithKms(userName: string, type: TokenType, authConfig: Auth) 
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
+  console.info(`got token using kms`);
   return `${tokenComponents.header}.${tokenComponents.payload}.${tokenComponents.signature}`;
 }
 
 async function encodeToken(userName: string, type: TokenType, authConfig: Auth): Promise<string> {
 	console.info(`encoding token, useRsa:${authConfig.useRsa}, useKms:${authConfig.useKms}, type: ${type}`);
-  if (authConfig.useRsa) {
-    return sign(userName, type, authConfig);
-  } if (authConfig.useRsa && authConfig.useKms) {
+  if (authConfig.useRsa && authConfig.useKms) {
     return signWithKms(userName, type, authConfig);
+  } else if (authConfig.useRsa) {
+    return sign(userName, type, authConfig);
   }
   return encodeWithSecret(userName, type, authConfig);
 }

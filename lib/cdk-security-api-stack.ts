@@ -62,6 +62,14 @@ export class CdkSecurityApiStack extends Stack {
       ]
     }));
 
+    getTokenFunction.addToRolePolicy(new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ['kms:Sign'],
+      resources: [
+        `arn:aws:kms:${this.region}:${this.account}:key/1755af86-36ab-4c93-9988-19968c7f3c1c`
+      ]
+    }));
+
     // CONFIGURE API GATEWAY
     const api = new aws_apigateway.RestApi(this, "SecurityApi", {
       restApiName: "SecurityApi",
