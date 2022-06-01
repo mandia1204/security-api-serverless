@@ -44,7 +44,7 @@ export class CdkSecurityApiStack extends Stack {
         tracing: aws_lambda.Tracing.ACTIVE,
         layers: lambdaLayers,
         bundling: {
-          minify: false,
+          minify: true,
           target: 'es2020',
           externalModules: ['@aws-sdk/client-kms', 'base64url', 'jwt-simple', 'moment']
         }
@@ -70,6 +70,37 @@ export class CdkSecurityApiStack extends Stack {
       ]
     }));
 
+    const getUserFunction = new aws_lambda_nodejs.NodejsFunction(
+      this,
+      "GetUser",
+      {
+        runtime: Runtime.NODEJS_16_X,
+        awsSdkConnectionReuse: true,
+        entry: "./src/api/getUser.ts",
+        handler: "handler",
+        memorySize: 256,
+        logRetention: aws_logs.RetentionDays.ONE_WEEK,
+        tracing: aws_lambda.Tracing.ACTIVE,
+        layers: lambdaLayers.filter(l => l.node.id === 'ApiNodeModules'),
+        bundling: {
+          minify: true,
+          target: 'es2020',
+          externalModules: ['@aws-sdk/client-dynamodb']
+        }
+      }
+    );
+
+    getUserFunction.addToRolePolicy(new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ['dynamodb:GetItem'],
+      resources: [
+        `arn:aws:dynamodb:${this.region}:${this.account}:table/Users`
+      ]
+    }));
+
+    Tags.of(getUserFunction).add('app', 'security');
+    Tags.of(getUserFunction).add('env', 'dev');
+
     // CONFIGURE API GATEWAY
     const api = new aws_apigateway.RestApi(this, "SecurityApi", {
       restApiName: "SecurityApi",
@@ -86,11 +117,18 @@ export class CdkSecurityApiStack extends Stack {
       "POST",
       new aws_apigateway.LambdaIntegration(getTokenFunction)
     );
+
+    const users = api.root.addResource("users");
+    const user = users.addResource("{userId}")
+    user.addMethod(
+      "GET",
+      new aws_apigateway.LambdaIntegration(getUserFunction)
+    );
     
-    new CfnOutput(this, "ApiURL", {
-      value: `${api.url}products`,
+    new CfnOutput(this, "UsersApiURL", {
+      value: `${api.url}users`,
     });
-    new CfnOutput(this, "SecurityApiUrl", {
+    new CfnOutput(this, "TokensApiUrl", {
       value: `${api.url}tokens`,
     });
   }

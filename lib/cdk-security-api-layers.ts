@@ -9,7 +9,7 @@ export default function setupLambdaLayers(stack: Stack): ILayerVersion[] {
   });
 
   const assetsPath = path.join(__dirname, "..", "src/assets");
-  new aws_s3_deployment.BucketDeployment(stack, 'Assets', {
+  const assetsS3Deployment = new aws_s3_deployment.BucketDeployment(stack, 'Assets', {
     destinationBucket: bucket,
     sources: [Source.asset(assetsPath)]
   });
@@ -29,8 +29,10 @@ export default function setupLambdaLayers(stack: Stack): ILayerVersion[] {
       aws_lambda.Runtime.NODEJS_16_X
     ],
     code: aws_lambda.Code.fromBucket(bucket, 'modules.zip'),
-    description: 'Rsa key for signing',
+    description: 'Node modules for security api functions'
   });
+
+  modulesLayer.node.addDependency(assetsS3Deployment);
 
   const appConfigArn = 'arn:aws:lambda:us-east-2:728743619870:layer:AWS-AppConfig-Extension:50';
   const appConfigExtension = LayerVersion.fromLayerVersionArn(stack, "appConfigExtension", appConfigArn);
