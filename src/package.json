@@ -7,6 +7,7 @@
     "@aws-sdk/client-kms": "^3.100.0",
     "@aws-sdk/lib-dynamodb": "^3.100.0",
     "base64url": "^3.0.1",
+    "jsonwebtoken": "^8.5.1",
     "jwt-simple": "^0.5.6",
     "moment": "^2.29.3"
   }

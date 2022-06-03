@@ -28,6 +28,28 @@ export class CdkSecurityApiStack extends Stack {
     const lambdaLayers = setupLambdaLayers(this);
 
     // FUNCTIONS
+    const JwtLambdaAuthorizerFunction = new aws_lambda_nodejs.NodejsFunction(
+      this,
+      "JwtLambdaAuthorizer",
+      {
+        runtime: Runtime.NODEJS_16_X,
+        awsSdkConnectionReuse: true,
+        entry: "./src/api/jwtLambdaAuthorizer.ts",
+        handler: "handler",
+        memorySize: 256,
+        logRetention: aws_logs.RetentionDays.ONE_WEEK,
+        tracing: aws_lambda.Tracing.ACTIVE,
+        layers: lambdaLayers.filter(l => l.node.id === 'tokenRsaKey'),
+        bundling: {
+          minify: true,
+          target: 'es2020'
+        }
+      }
+    );
+
+    Tags.of(JwtLambdaAuthorizerFunction).add('app', 'security');
+    Tags.of(JwtLambdaAuthorizerFunction).add('env', 'dev');
+
     const getTokenFunction = new aws_lambda_nodejs.NodejsFunction(
       this,
       "GetToken",
@@ -102,6 +124,11 @@ export class CdkSecurityApiStack extends Stack {
     Tags.of(getUserFunction).add('env', 'dev');
 
     // CONFIGURE API GATEWAY
+    const jwtAuthorizer = new aws_apigateway.RequestAuthorizer(this, 'jwtAuthorizer', {
+      handler: JwtLambdaAuthorizerFunction,
+      identitySources: [aws_apigateway.IdentitySource.header('Authorization')]
+    });
+
     const api = new aws_apigateway.RestApi(this, "SecurityApi", {
       restApiName: "SecurityApi",
       deployOptions: {
@@ -122,7 +149,10 @@ export class CdkSecurityApiStack extends Stack {
     const user = users.addResource("{userId}")
     user.addMethod(
       "GET",
-      new aws_apigateway.LambdaIntegration(getUserFunction)
+      new aws_apigateway.LambdaIntegration(getUserFunction),
+      {
+        authorizer: jwtAuthorizer,
+      }
     );
     
     new CfnOutput(this, "UsersApiURL", {

@@ -20,8 +20,10 @@ export default function setupLambdaLayers(stack: Stack): ILayerVersion[] {
       aws_lambda.Runtime.NODEJS_16_X
     ],
     code: aws_lambda.Code.fromBucket(bucket, 'keys.zip'),
-    description: 'Rsa key for signing',
+    description: 'Rsa keys for signing',
   });
+
+  tokenRsaKeyLayer.node.addDependency(assetsS3Deployment);
 
   const modulesLayer = new aws_lambda.LayerVersion(stack, 'ApiNodeModules', {
     compatibleRuntimes: [

@@ -6,7 +6,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   console.log('event :>> ', event);
   const userId = parseInt(event.pathParameters?.userId as string);
   try {
-    console.info(`getting user} ${userId}`);
+    console.info(`getting user ${userId}`);
     const result = await getUser(userId);
 
     return {
@@ -15,7 +15,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       body: JSON.stringify(result),
     };
   } catch (error) {
-    console.error(error);
+    console.error('error while getting user:', error);
     return {
       statusCode: 500,
       headers: { "content-type": "application/json" },
