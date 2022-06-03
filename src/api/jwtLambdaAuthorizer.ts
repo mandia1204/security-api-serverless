@@ -7,7 +7,6 @@ interface ResponsePayload extends APIGatewayAuthorizerResultContext {
 
 export async function handler(event: APIGatewayRequestAuthorizerEvent): Promise<APIGatewayAuthorizerWithContextResult<ResponsePayload>>
 {
-  // console.log('event :>> ', event);
   const token = event.headers?.Authorization?.replace('Bearer ', '') as string;
   return verifyToken(token)
         .then(valid => {

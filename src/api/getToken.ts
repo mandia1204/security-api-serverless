@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import http from 'http';
+import axios from 'axios';
 import tokenEncoder from "./tokenEncoder";
 
 const encoder = tokenEncoder();
@@ -9,19 +9,9 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
   const { userName, type} = JSON.parse(event.body as string);
   try {
     console.info(`getting config}`);
-    const res = await new Promise<any>((resolve, _) => {
-      http.get(process.env.TOKEN_CONFIG_URI as string, resolve);
-    });
-
-    let configData: string = await new Promise((resolve, reject) => {
-      let data = '';
-      res.on('data', (chunk: any) => data += chunk);
-      res.on('error', (err: any) => reject(err));
-      res.on('end', () => resolve(data));
-    });
-
+    const { data } = await axios.get(process.env.TOKEN_CONFIG_URI as string)
     console.info(`getting token ${userName}, ${type}`);
-    const result = await encoder.encodeToken(userName, type, JSON.parse(configData))
+    const result = await encoder.encodeToken(userName, type, data)
 
     return {
       statusCode: 200,
