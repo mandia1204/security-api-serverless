@@ -1,13 +1,14 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { getUser } from '../db/userRepo';
+import { saveUser } from '../db/userRepo';
+import { User } from "../types/user";
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult>
 {
   console.log('event :>> ', event);
-  const userId = event.pathParameters?.userId as string;
+  const user = JSON.parse(event.body as string) as User;
   try {
-    console.info(`getting user ${userId}`);
-    const result = await getUser(userId);
+    console.info(`creating user ${user.userName}`);
+    const result = await saveUser(user);
 
     return {
       statusCode: 200,

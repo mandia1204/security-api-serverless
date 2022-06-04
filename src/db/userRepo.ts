@@ -1,5 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, GetCommand, GetCommandInput } from '@aws-sdk/lib-dynamodb';
+import { v4 as uuidv4 } from 'uuid';
+import { DynamoDBDocumentClient, GetCommand, GetCommandInput, PutCommandInput, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { User } from "../types/user";
 
 const client = new DynamoDBClient({ region: "us-east-2" });
 const marshallOptions = {
@@ -20,7 +22,7 @@ const translateConfig = { marshallOptions, unmarshallOptions };
 const ddbDocClient = DynamoDBDocumentClient.from(client, translateConfig);
 
 const tableName = 'Users';
-export async function getUser(userId: number) {
+export async function getUser(userId: string) {
     const params: GetCommandInput = {
       TableName: tableName,
       Key: { id : userId },
@@ -34,4 +36,24 @@ export async function getUser(userId: number) {
       console.log('error getting user :>> ', error);
       return null;
     } 
+}
+
+export async function saveUser(user: User) {
+  if(!user.id){
+    user.id = uuidv4();
+  }
+  const params: PutCommandInput = {
+    TableName: tableName,
+    Item: user,
+    ReturnConsumedCapacity: 'NONE'
+  };
+  const command = new PutCommand(params);
+  try {
+    const data = await ddbDocClient.send(command);
+    console.log('user saved :>> ', data);
+    return user;
+  } catch (error) {
+    console.log('error saving user :>> ', error);
+    return null;
+  } 
 }

@@ -4,6 +4,7 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 import setupAppConfig from './cdk-security-api-config';
 import setupLambdaLayers from './cdk-security-api-layers';
+import addUsersApi from './cdk-security-api-users-api';
 
 export class CdkSecurityApiStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -17,7 +18,7 @@ export class CdkSecurityApiStack extends Stack {
       attributeDefinitions: [
         {
           attributeName: 'id',
-          attributeType: 'N'
+          attributeType: 'S'
         }
       ],
       tableName: 'Users',
@@ -92,37 +93,6 @@ export class CdkSecurityApiStack extends Stack {
       ]
     }));
 
-    const getUserFunction = new aws_lambda_nodejs.NodejsFunction(
-      this,
-      "GetUser",
-      {
-        runtime: Runtime.NODEJS_16_X,
-        awsSdkConnectionReuse: true,
-        entry: "./src/api/getUser.ts",
-        handler: "handler",
-        memorySize: 256,
-        logRetention: aws_logs.RetentionDays.ONE_WEEK,
-        tracing: aws_lambda.Tracing.ACTIVE,
-        layers: lambdaLayers.filter(l => l.node.id === 'ApiNodeModules'),
-        bundling: {
-          minify: true,
-          target: 'es2020',
-          externalModules: ['@aws-sdk/client-dynamodb']
-        }
-      }
-    );
-
-    getUserFunction.addToRolePolicy(new PolicyStatement({
-      effect: Effect.ALLOW,
-      actions: ['dynamodb:GetItem'],
-      resources: [
-        `arn:aws:dynamodb:${this.region}:${this.account}:table/Users`
-      ]
-    }));
-
-    Tags.of(getUserFunction).add('app', 'security');
-    Tags.of(getUserFunction).add('env', 'dev');
-
     // CONFIGURE API GATEWAY
     const jwtAuthorizer = new aws_apigateway.RequestAuthorizer(this, 'jwtAuthorizer', {
       handler: JwtLambdaAuthorizerFunction,
@@ -145,15 +115,7 @@ export class CdkSecurityApiStack extends Stack {
       new aws_apigateway.LambdaIntegration(getTokenFunction)
     );
 
-    const users = api.root.addResource("users");
-    const user = users.addResource("{userId}")
-    user.addMethod(
-      "GET",
-      new aws_apigateway.LambdaIntegration(getUserFunction),
-      {
-        authorizer: jwtAuthorizer,
-      }
-    );
+    addUsersApi(this, lambdaLayers, api.root, jwtAuthorizer);
     
     new CfnOutput(this, "UsersApiURL", {
       value: `${api.url}users`,
