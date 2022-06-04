@@ -1,5 +1,5 @@
-import { encode } from 'jwt-simple';
-import moment from 'moment';
+import jwt from 'jsonwebtoken';
+import ms from 'ms';
 import fs from 'fs';
 import base64url from 'base64url';
 import { KMSClient, SignCommand } from '@aws-sdk/client-kms';
@@ -14,26 +14,34 @@ function getKmsSignCommand(message: Uint8Array | undefined, authConfig: Auth) {
   });
 }
 
+function calculateExp(time: string): number {
+  var timestamp = Math.floor(Date.now() / 1000);
+  var milliseconds = ms(time);
+  return Math.floor(timestamp + milliseconds / 1000);
+}
+
 function getTokenPayload(userName: string, type: TokenType, authConfig: Auth) {
   const { exp } = authConfig[type];
   return {
     userName,
     iss: authConfig.issuer,
     aud: authConfig.audience,
-    exp: moment().add(exp.amount, exp.unit).unix(),
+    exp: calculateExp(`${exp.amount} ${exp.unit}`)
   };
 }
 
 function encodeWithSecret(userName: string, type: TokenType, authConfig: Auth) {
   const payload = getTokenPayload(userName, type, authConfig);
-  return encode(payload, authConfig[type].jwtSecret);
+  return jwt.sign(payload, authConfig[type].jwtSecret);
 }
 
 function sign(userName: string, type: TokenType, authConfig: Auth) {
   const payload = getTokenPayload(userName, type, authConfig);
 	const keyPath = '/opt/keys/private-key.key';
   const privateKey = fs.readFileSync(keyPath, 'utf8');
-  return encode(payload, privateKey, 'RS256');
+  return jwt.sign(payload, privateKey, {
+    algorithm: 'RS256'
+  });
 }
 
 const header = {
@@ -45,6 +53,7 @@ const client = new KMSClient({ region: 'us-east-2' });
 
 async function signWithKms(userName: string, type: TokenType, authConfig: Auth) {
   const payload = getTokenPayload(userName, type, authConfig);
+  
   const tokenComponents: TokenComponents = {
     header: base64url(JSON.stringify(header)),
     payload: base64url(JSON.stringify(payload)),
