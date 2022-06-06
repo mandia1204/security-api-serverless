@@ -16,7 +16,6 @@ export default function setupLambdaLayers(stack: Stack): ILayerVersion[] {
 
   const tokenRsaKeyLayer = new aws_lambda.LayerVersion(stack, 'tokenRsaKey', {
     compatibleRuntimes: [
-      aws_lambda.Runtime.NODEJS_14_X,
       aws_lambda.Runtime.NODEJS_16_X
     ],
     code: aws_lambda.Code.fromBucket(bucket, 'keys.zip'),
@@ -27,11 +26,10 @@ export default function setupLambdaLayers(stack: Stack): ILayerVersion[] {
 
   const modulesLayer = new aws_lambda.LayerVersion(stack, 'ApiNodeModules', {
     compatibleRuntimes: [
-      aws_lambda.Runtime.NODEJS_14_X,
       aws_lambda.Runtime.NODEJS_16_X
     ],
     code: aws_lambda.Code.fromBucket(bucket, 'modules.zip'),
-    description: 'Node modules for security api functions'
+    description: 'Node modules for security api functions v2'
   });
 
   modulesLayer.node.addDependency(assetsS3Deployment);

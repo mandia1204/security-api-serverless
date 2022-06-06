@@ -22,7 +22,7 @@ export default function addUsersApi(
       bundling: {
         minify: true,
         target: 'es2020',
-        externalModules: ['@aws-sdk/client-dynamodb']
+        externalModules: ['aws-lambda', '@aws-sdk/client-dynamodb', '@aws-sdk/lib-dynamodb', 'uuid']
       }
     }
   );
@@ -53,7 +53,7 @@ export default function addUsersApi(
       bundling: {
         minify: true,
         target: 'es2020',
-        externalModules: ['@aws-sdk/client-dynamodb']
+        externalModules: ['aws-lambda','@aws-sdk/client-dynamodb', '@aws-sdk/lib-dynamodb', 'uuid']
       }
     }
   );
@@ -77,7 +77,7 @@ export default function addUsersApi(
       new aws_apigateway.LambdaIntegration(getUserFunction),
       {
         authorizer: jwtAuthorizer,
-      }
+      },
   );
   users.addMethod(
     'POST',

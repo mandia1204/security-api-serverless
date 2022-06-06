@@ -40,10 +40,11 @@ export class CdkSecurityApiStack extends Stack {
         memorySize: 256,
         logRetention: aws_logs.RetentionDays.ONE_WEEK,
         tracing: aws_lambda.Tracing.ACTIVE,
-        layers: lambdaLayers.filter(l => l.node.id === 'tokenRsaKey'),
+        layers: lambdaLayers.filter(l => l.node.id === 'tokenRsaKey' || l.node.id === 'ApiNodeModules'),
         bundling: {
           minify: true,
-          target: 'es2020'
+          target: 'es2020',
+          externalModules: ['aws-lambda', 'jsonwebtoken']
         }
       }
     );
@@ -69,7 +70,7 @@ export class CdkSecurityApiStack extends Stack {
         bundling: {
           minify: true,
           target: 'es2020',
-          externalModules: ['@aws-sdk/client-kms', 'base64url', 'jwt-simple', 'moment']
+          externalModules: ['aws-lambda', '@aws-sdk/client-kms', 'base64url', 'ms', 'axios', 'jsonwebtoken']
         }
       }
     );
@@ -106,6 +107,14 @@ export class CdkSecurityApiStack extends Stack {
         dataTraceEnabled: true,
         loggingLevel: aws_apigateway.MethodLoggingLevel.INFO,
         metricsEnabled: true,
+      },
+      defaultCorsPreflightOptions: {
+        allowHeaders: [
+          'Content-Type',
+          'Authorization'
+        ],
+        allowMethods: ['OPTIONS','GET', 'POST', 'PUT', 'DELETE'],
+        allowOrigins: ['http://localhost:8080'],
       }
     });
 
